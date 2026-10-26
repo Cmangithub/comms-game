@@ -13,7 +13,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #mapTools{position:absolute;left:6px;top:6px;display:flex;gap:4px;z-index:2;flex-wrap:wrap}#mapTools input{width:64px}#mapTools *{min-height:34px;padding:4px 8px;font-size:13px}
 #readout{position:absolute;left:6px;bottom:6px;background:rgba(30,30,30,.88);padding:3px 8px;border-radius:6px;font-size:13px;z-index:2;max-width:95%}
 #side{width:400px;flex:none;overflow-y:auto;border-left:1px solid #555;background:#303030;padding:8px}
-body.comms #side{width:58vw}
+body.comms #side{width:var(--sideW,40vw)}#drag{display:none;flex:none;background:#555;cursor:col-resize;width:10px;touch-action:none;align-items:center;justify-content:center;color:#bbb;font-size:12px}body.comms #drag{display:flex}#drag:hover{background:#777}
+#msg900 .m{border:1px solid #666;border-radius:8px;padding:6px;margin:4px 0;background:#3d3d3d}#msg900 .m.new{border:3px solid #ffd54a;background:#4a4320}#msg900 img,#msg900 svg.ill{max-height:80px;display:inline-block!important;margin:4px 4px 0 0!important;max-width:100%;border-radius:6px;display:block;margin:4px 0;background:#fff}
 .box{background:#383838;border:1px solid #555;border-radius:10px;padding:8px;margin-bottom:8px}.box h3{margin:0 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:#ddd}
 .small{font-size:12px;color:#bbb}.note{font-size:12px;color:#bbb;font-style:italic}
 .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}.dot{width:12px;height:12px;border-radius:50%;flex:none;display:inline-block}
@@ -31,14 +32,14 @@ table{border-collapse:collapse}td,th{border:1px solid #666;padding:3px 5px;text-
 #clog input{width:100%;min-width:92px;padding:6px;font-size:14px;border-radius:5px}#clog td.tm{min-width:124px;white-space:nowrap}#clog td.tm input{width:68px;min-width:68px}#clog td.tm button{min-height:32px;padding:2px 6px;font-size:12px;margin-left:2px}
 .big{font-size:40px;font-weight:800;letter-spacing:6px}
 .st-sent{color:#ffd54a}.st-seen{color:#7fd0ff}.st-done{color:#8c8}
-@media (max-width:820px){#main{flex-direction:column}#mapbox{flex:none;height:50vh}body.comms #mapbox{height:42vh}#side,body.comms #side{width:100%;border-left:0;border-top:1px solid #555;flex:1}header{gap:5px;padding:4px 6px}header b{font-size:14px}#hdrInfo{display:none}#bHelp,#mStyle{min-height:34px;padding:4px 6px}}
+@media (max-width:820px){#main{flex-direction:column}#mapbox{flex:none;height:50vh}body.comms #mapbox{height:var(--mapH,55vh)}#drag,body.comms #drag{cursor:row-resize;width:100%;height:14px}#side,body.comms #side{width:100%;border-left:0;border-top:1px solid #555;flex:1}header{gap:5px;padding:4px 6px}header b{font-size:14px}#hdrInfo{display:none}#bHelp,#mStyle{min-height:34px;padding:4px 6px}}
 </style></head><body>
-<header><b>EB Comms Game</b><span id="net">offline</span><span id="hdrInfo"></span><span id="inboxBtn"></span><span id="timer"></span>
+<header><b>EB Comms Game</b><span id="net">offline</span><span id="hdrInfo"></span><span id="inboxBtn"></span><button id="bSplit" style="display:none" title="Switch: bigger map / bigger table">⇄</button><span id="timer"></span>
 <select id="mStyle" title="Map style"><option value="a">Original</option><option value="b">Dim</option><option value="c">Dusk</option><option value="d">Night</option><option value="e">Dark muted</option></select>
 <button id="bHelp">Rules</button></header>
 <div id="main"><div id="mapbox"><canvas id="c"></canvas>
 <div id="mapTools"><input id="gridJump" placeholder="3E"><button id="bJump">Go to</button><button id="bFit">Fit</button><button id="bZin">+</button><button id="bZout">−</button></div><div id="readout"></div></div>
-<div id="side"></div></div>
+<div id="drag" title="Drag to resize">⋮</div><div id="side"></div></div>
 <div id="pop"></div><div id="reveal"></div>
 <div id="overlay"><div class="in" id="ovIn"></div></div>
 <script>
@@ -2419,7 +2420,7 @@ const DIGS=['zero','one','two','three','four','five','six','seven','eight','nine
 const sayCsG=c=>/^\d+[AB]?$/.test(c)?c.replace(/[AB]$/,'').split('').map(d=>DIGS[+d]).join(' ')+(c.match(/[AB]$/)?' '+(c.endsWith('A')?'Alpha':'Bravo'):''):c;
 const CODES={SNR:'Service Not Required',Green:'Minor',Yellow:'Walk to med tent',Grey:'Needs transport',Purple:'Severe trauma',Blue:'Life-threatening',Red:'Mass casualty',Black:'Security threat'};
 const CODECOL={SNR:'#bbb',Green:'#5c5',Yellow:'#ee4',Grey:'#999',Purple:'#a6f',Blue:'#59f',Red:'#f44',Black:'#ccc'};
-const TYPES={patient:['Patient','#e53935'],incident:['Incident','#ff8f00'],errand:['Personal errand','#8e24aa'],message:['General message','#1e88e5'],move:['Move order','#43a047']};
+const TYPES={patient:['Patient','#e53935'],incident:['Incident','#ff8f00'],errand:['Personal errand','#8e24aa'],message:['General message','#1e88e5'],move:['Move order','#43a047'],comms:['Message to comms officer (900)','#00acc1']};
 // built-in illustrations (simple inline SVG)
 const S0='<svg class="ill" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">',S1='</svg>',SK='#f1c27d';
 const ICONS={
@@ -2474,15 +2475,15 @@ if(d.t=='move'&&u)goTo(u,d.x,d.y);
 if(d.t=='ack'){const j=S.jobs.find(j=>j.id==d.id);if(j&&canSee(p,j)){j.seen=j.seen||{};j.seen[p.cs]=now();if(hTab=='jobs')renderSide()}}
 if(d.t=='needjob'&&c){const j=S.jobs.find(j=>j.id==d.id);if(j&&canSee(p,j))c.send({t:'job',job:j})}
 if(p.role=='comms'&&d.t=='clog'){S.clog={rows:(d.rows||[]).slice(0,60).map(r=>(r||[]).slice(0,6).map(v=>String(v).slice(0,200))),notes:String(d.notes||'').slice(0,5000),pins:(d.pins||[]).slice(0,40).map(q=>({x:+q.x,y:+q.y,label:String(q.label||'').slice(0,20)}))};if(hTab=='clog')renderClogView()}}
-const canSee=(p,j)=>p.role=='field'&&(j.to==p.cs||j.to=='all');
+const canSee=(p,j)=>(p.role=='field'&&j.to!='900'&&(j.to==p.cs||j.to=='all'))||(p.role=='comms'&&j.to=='900');
 function goTo(u,x,y){u.path=route([u.x,u.y],[x,y])}
 function hostTick(){if(!S)return;const dt=.1;if(S.phase=='play'&&S.tEnd&&now()>S.tEnd)doReveal();
 for(const c in S.units){const u=S.units[c];if(u.path&&u.path.length){const sp=isBuggy(c)?260:110,[tx,ty]=u.path[0],dx=tx-u.x,dy=ty-u.y,d=Math.hypot(dx,dy),s=sp*dt;if(d<=s){u.x=tx;u.y=ty;u.path.shift();if(!u.path.length)u.path=null}else{u.x+=dx/d*s;u.y+=dy/d*s}}}}
-function sendJob(){const f=JF;if(!f.to){alert('Choose a target unit');return}if(f.type!='move'&&!f.title.trim()&&!f.details.trim()){alert('Add a title or details');return}
+function sendJob(){const f=JF;if(f.type=='comms')f.to='900';if(f.to=='900')f.type='comms';if(!f.to){alert('Choose a target unit');return}if(f.type!='move'&&!f.title.trim()&&!f.details.trim()){alert('Add a title or details');return}
 let x=f.x,y=f.y,grid=null;if(x==null&&f.grid){const p=gridToXY(f.grid);if(p){[x,y]=p}}if(x==null&&f.locName){const l=locBy(f.locName);if(l){x=l.x;y=l.y}}if(x!=null)grid=gref(x,y);
 if(f.type=='move'&&x==null){alert('A move order needs a location');return}
-const j={id:S.nextJob++,to:f.to,type:f.type,title:f.title.trim()||(f.type=='move'?'Move to '+grid:TYPES[f.type][0]),details:f.details.trim(),icon:f.icon,img:f.img,x,y,grid,locName:f.locName||(x!=null?(L.find(l=>Math.hypot(l.x-x,l.y-y)<70)||{}).n||'':''),vis:x==null?'none':f.vis,markerOn:x!=null&&f.vis=='public'&&f.type!='move',move:!!f.move&&x!=null,t:now(),seen:{},resolved:false,match:''};
-S.jobs.push(j);if(j.move){(j.to=='all'?Object.values(S.units):[S.units[j.to]]).forEach(u=>u&&goTo(u,x+(Math.random()*30-15),y+(Math.random()*30-15)))}
+const j={id:S.nextJob++,to:f.to,type:f.type,title:f.title.trim()||(f.type=='move'?'Move to '+grid:TYPES[f.type][0]),details:f.details.trim(),icon:f.icon,img:f.img,x,y,grid,locName:f.locName||(x!=null?(L.find(l=>Math.hypot(l.x-x,l.y-y)<70)||{}).n||'':''),vis:f.type=='comms'?'900':(x==null?'none':f.vis),markerOn:x!=null&&(f.type=='comms'||(f.vis=='public'&&f.type!='move')),move:f.type!='comms'&&!!f.move&&x!=null,t:now(),seen:{},resolved:false,match:''};
+S.jobs.push(j);if(j.move&&j.to!='900'){(j.to=='all'?Object.values(S.units):[S.units[j.to]]).forEach(u=>u&&goTo(u,x+(Math.random()*30-15),y+(Math.random()*30-15)))}
 for(const n in conns){const p=S.players[n];if(p&&conns[n].open&&canSee(p,j))try{conns[n].send({t:'job',job:j})}catch(e){}}
 if(f.type=='patient'){const m=f.title.match(/(\d+)\s*$/);JF.title=m?f.title.replace(/\d+\s*$/,+m[1]+1):f.title}JF.details='';JF.icon='';JF.img='';JF.x=null;JF.y=null;JF.grid='';JF.locName='';JF.move=false;hTab='jobs';renderSide()}
 function resendJob(id){const j=S.jobs.find(j=>j.id==id);if(!j)return;for(const n in conns){const p=S.players[n];if(p&&conns[n].open&&canSee(p,j))try{conns[n].send({t:'job',job:j,again:1})}catch(e){}}}
@@ -2495,24 +2496,24 @@ function autoAssign(){const ps=Object.values(S.players);if(!ps.some(p=>p.role=='
 function setRole(n,v){const p=S.players[n];v=String(v||'').trim().slice(0,14);if(!v||v=='none'){p.role='none';p.cs=null}else if(v=='900'){Object.values(S.players).forEach(q=>{if(q.role=='comms'){q.role='none';q.cs=null}});p.role='comms';p.cs='900'}
 else{Object.values(S.players).forEach(q=>{if(q!=p&&q.cs==v){q.role='none';q.cs=null}});if(S.units[v]&&S.units[v].bot)delete S.units[v];p.role='field';p.cs=v}syncUnits();renderSide()}
 function viewFor(p){const b={t:'snap',now:now(),phase:S.phase,round:S.round,tEnd:S.tEnd,code:S.code,me:{name:p.name,cs:p.cs,role:p.role}};
-if(p.role=='comms'){b.roster=Object.keys(S.units);if(S.phase=='reveal')b.reveal=S.reveal;return b}
+if(p.role=='comms'){b.roster=Object.keys(S.units);const m9=S.jobs.filter(j=>j.to=='900');b.inbox=m9.map(j=>({id:j.id,res:j.resolved}));b.pins900=m9.filter(j=>j.markerOn&&j.x!=null&&!j.resolved).map(j=>({id:j.id,x:Math.round(j.x),y:Math.round(j.y),type:'comms',title:j.title+' (reported)'}));if(S.phase=='reveal')b.reveal=S.reveal;return b}
 if(p.role!='field')return b;
 b.units=Object.values(S.units).map(u=>({cs:u.cs,x:Math.round(u.x),y:Math.round(u.y),m:!!u.path}));
-b.markers=S.jobs.filter(j=>j.markerOn&&j.x!=null&&j.vis=='public').map(j=>({id:j.id,x:Math.round(j.x),y:Math.round(j.y),type:j.type,title:j.title}));
-b.priv=S.jobs.filter(j=>j.x!=null&&!j.markerOn&&!j.resolved&&(j.to==p.cs||j.to=='all')).map(j=>({id:j.id,x:Math.round(j.x),y:Math.round(j.y),type:j.type,title:j.title}));
-b.inbox=S.jobs.filter(j=>j.to==p.cs||j.to=='all').map(j=>({id:j.id,res:j.resolved}));if(S.phase=='reveal')b.reveal=S.reveal;return b}
+b.markers=S.jobs.filter(j=>j.to!='900'&&j.markerOn&&j.x!=null&&j.vis=='public').map(j=>({id:j.id,x:Math.round(j.x),y:Math.round(j.y),type:j.type,title:j.title}));
+b.priv=S.jobs.filter(j=>j.to!='900'&&j.x!=null&&!j.markerOn&&!j.resolved&&(j.to==p.cs||j.to=='all')).map(j=>({id:j.id,x:Math.round(j.x),y:Math.round(j.y),type:j.type,title:j.title}));
+b.inbox=S.jobs.filter(j=>j.to!='900'&&(j.to==p.cs||j.to=='all')).map(j=>({id:j.id,res:j.resolved}));if(S.phase=='reveal')b.reveal=S.reveal;return b}
 function broadcast(){if(!S)return;for(const n in conns){const c=conns[n],p=S.players[n];if(c.open&&p)try{c.send(viewFor(p))}catch(e){}}
-if(hostView=='comms'){SNAP=viewFor({name:'Facilitator',role:'comms',cs:'900'});SNAP.me.role='comms'}else SNAP={t:'snap',now:now(),phase:S.phase,round:S.round,tEnd:S.tEnd,code:S.code,me:{role:'host'},units:Object.values(S.units).map(u=>({cs:u.cs,x:u.x,y:u.y,m:!!u.path})),markers:S.jobs.filter(j=>j.x!=null&&!j.resolved).map(j=>({id:j.id,x:j.x,y:j.y,type:j.type,title:j.title+' → '+j.to,priv:!j.markerOn})),pins:S.clog.pins,reveal:S.reveal};
-if(placeMode&&JF.x!=null)SNAP.place=[JF.x,JF.y];renderHdr()}
+if(hostView=='comms'){SNAP=viewFor({name:'Facilitator',role:'comms',cs:'900'});SNAP.me.role='comms';S.jobs.filter(j=>j.to=='900').forEach(j=>JOBS[j.id]=j)}else SNAP={t:'snap',now:now(),phase:S.phase,round:S.round,tEnd:S.tEnd,code:S.code,me:{role:'host'},units:Object.values(S.units).map(u=>({cs:u.cs,x:u.x,y:u.y,m:!!u.path})),markers:S.jobs.filter(j=>j.x!=null&&!j.resolved&&(j.markerOn||j.to!='900')).map(j=>({id:j.id,x:j.x,y:j.y,type:j.type,title:j.to=='900'?j.title+' – Pin for 900 only':j.title+' → '+j.to,priv:!j.markerOn||j.to=='900'})),pins:S.clog.pins,reveal:S.reveal};
+if(JF.x!=null&&hTab=='send'&&hostView=='true')SNAP.place=[JF.x,JF.y];renderHdr()}
 // ===================== PLAYER =====================
 function joinGame(code,name){MODE='player';ME.name=name;localStorage.setItem('ebGameName',name);code=code.toUpperCase().trim();ME.code=code;if(localStorage.getItem('ebRoom')!=code){localStorage.setItem('ebRoom',code);seenJobs=new Set();JOBS={};localStorage.setItem('ebSeen','[]')}location.hash='room='+code;setNet('connecting…');
 peer=new Peer(PEEROPTS);peer.on('open',()=>connectHost());peer.on('error',e=>setNet('error: '+e.type+(e.type=='peer-unavailable'?' (room not found)':'')));fit();renderSide()}
 function connectHost(){conn=peer.connect('cpd9eb-'+ME.code,{reliable:true});conn.on('open',()=>{setNet('connected – room '+ME.code,1);conn.send({t:'join',name:ME.name})});
 conn.on('data',d=>{window.__msgs=(window.__msgs||[]);window.__msgs.push(JSON.stringify(d).slice(0,3000));if(window.__msgs.length>400)window.__msgs.shift();
 if(d.t=='welcome'){ME.name=d.name}else if(d.t=='reset'){JOBS={};seenJobs=new Set();localStorage.setItem('ebSeen','[]');CLOG={rows:Array.from({length:10},()=>Array(6).fill('')),notes:'',pins:[]};saveClog(true);renderSide()}
-else if(d.t=='job'){JOBS[d.job.id]=d.job;if(d.again)seenJobs.delete(d.job.id);if(SNAP&&SNAP.me.role=='field'){renderSide();showPop()}}
-else if(d.t=='snap'){const was=SNAP&&SNAP.me&&SNAP.me.role,ph=SNAP&&SNAP.phase;SNAP=d;ME.role=d.me.role;ME.cs=d.me.cs;document.body.className=ME.role=='comms'?'comms':'';
-(d.inbox||[]).forEach(i=>{if(!JOBS[i.id])conn.send({t:'needjob',id:i.id});else JOBS[i.id].resolved=i.res});
+else if(d.t=='job'){JOBS[d.job.id]=d.job;if(d.again)seenJobs.delete(d.job.id);if(SNAP&&SNAP.me.role=='field'){renderSide();showPop()}else if(SNAP&&SNAP.me.role=='comms')renderMsg900()}
+else if(d.t=='snap'){const was=SNAP&&SNAP.me&&SNAP.me.role,ph=SNAP&&SNAP.phase;SNAP=d;ME.role=d.me.role;ME.cs=d.me.cs;document.body.className=ME.role=='comms'?'comms':'';applySplit();
+(d.inbox||[]).forEach(i=>{if(!JOBS[i.id])conn.send({t:'needjob',id:i.id});else if(JOBS[i.id].resolved!=i.res){JOBS[i.id].resolved=i.res;if(ME.role=='comms')renderMsg900()}});
 if(was!=ME.role||ph!=d.phase){if(was!=ME.role&&ME.role=='comms')saveClog(true);renderSide();if(d.phase=='reveal')showReveal()}renderHdr()}});
 conn.on('close',()=>setNet('disconnected – tap Reconnect'))}
 function send(d){if(MODE=='host'){if(hostView=='comms'&&d.t=='clog')handleIntent({role:'comms',name:'Facilitator'},d)}else if(conn&&conn.open)conn.send(d)}
@@ -2529,13 +2530,13 @@ x.save();x.translate(u.x,u.y);x.scale(1.9,1.9);if(isBuggy(u.cs)){x.fillStyle='#f
 else{x.fillStyle='rgb('+c+')';x.fillRect(-8,-6,16,14);x.strokeStyle='#222';x.lineWidth=1.5;x.strokeRect(-8,-6,16,14);x.fillStyle='#1a9b3a';x.fillRect(-1.5,-4,3,10);x.fillRect(-5,-.5,10,3);x.fillStyle='#f1c27d';x.beginPath();x.arc(0,-11,6,0,7);x.fill();x.stroke()}x.restore();
 lbl(u.cs,u.x,u.y-46,own?'#fff':'rgba(25,25,25,.9)',own?'#000':'rgb('+c+')',30)}
 function drawMarker(m,dashed){const col=(TYPES[m.type]||TYPES.message)[1];x.fillStyle=col+'66';x.beginPath();x.arc(m.x,m.y,38+5*Math.sin(now()/220),0,7);x.fill();x.fillStyle=col;x.beginPath();x.arc(m.x,m.y,18,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=4;if(dashed)x.setLineDash([8,6]);x.stroke();x.setLineDash([]);
-lbl((m.type=='patient'?'✚ ':m.type=='incident'?'⚠ ':'')+m.title+(dashed?' (private)':''),m.x,m.y-48,col,'#fff',26)}
+lbl((m.type=='patient'?'✚ ':m.type=='incident'?'⚠ ':m.type=='comms'?'📍 ':'')+m.title+(dashed&&m.type!='comms'&&!/900 only/.test(m.title)?' (private)':''),m.x,m.y-48,col,'#fff',26)}
 function draw(){requestAnimationFrame(draw);x.setTransform(1,0,0,1,0,0);x.fillStyle='#222';x.fillRect(0,0,cv.width,cv.height);x.setTransform(DPR*VIEW.s,0,0,DPR*VIEW.s,DPR*VIEW.ox,DPR*VIEW.oy);
 if(img.complete){x.filter=STYLES[mstyle];x.drawImage(img,0,0,IW,IH);x.filter='none'}
 x.strokeStyle='rgba(120,200,255,.5)';x.lineWidth=2.5;for(let i=0;i<=24;i++){x.beginPath();x.moveTo(GO+i*GC,GO);x.lineTo(GO+i*GC,GO+16*GC);x.stroke()}for(let j=0;j<=16;j++){x.beginPath();x.moveTo(GO,GO+j*GC);x.lineTo(GO+24*GC,GO+j*GC);x.stroke()}
 if(hoverG){const c=COLS.indexOf(hoverG[0]),r=+hoverG.slice(1)-1;x.fillStyle='rgba(120,200,255,.22)';x.fillRect(GO+c*GC,GO+r*GC,GC,GC)}
 const s=SNAP;if(!s)return;const role=s.me&&s.me.role;
-(s.markers||[]).forEach(m=>drawMarker(m,m.priv));(s.priv||[]).forEach(m=>drawMarker(m,true));
+(s.markers||[]).forEach(m=>drawMarker(m,m.priv));(s.pins900||[]).forEach(m=>drawMarker(m,false));(s.priv||[]).forEach(m=>drawMarker(m,true));
 const pins=role=='comms'?CLOG.pins:(role=='host'?s.pins:null);(pins||[]).forEach(q=>{x.strokeStyle='#ffd54a';x.lineWidth=5;x.beginPath();x.moveTo(q.x,q.y);x.lineTo(q.x,q.y-40);x.stroke();x.fillStyle='#ffd54a';x.beginPath();x.arc(q.x,q.y-46,12,0,7);x.fill();lbl('📌 '+(q.label||'pin'),q.x,q.y+30,'rgba(25,25,25,.9)','#ffd54a',24)});
 (s.units||[]).forEach(u=>drawUnit(u,role=='field'&&u.cs==s.me.cs));
 if(s.place){x.strokeStyle='#0ff';x.lineWidth=6;x.beginPath();x.arc(s.place[0],s.place[1],30,0,7);x.stroke();lbl('JOB LOCATION '+gref(s.place[0],s.place[1]),s.place[0],s.place[1]+64,'#0ff','#000',26)}
@@ -2553,7 +2554,7 @@ if(role=='field'){send({t:'move',x:wx,y:wy});flash('Moving to grid '+gref(wx,wy)
 else if(role=='comms'&&pinMode){const lab=prompt('Pin label (e.g. 871, fire, P1)','')||'';CLOG.pins.push({x:wx,y:wy,label:lab.slice(0,20)});pinMode=false;saveClog();renderSide()}}
 function flash(t){$('readout').textContent=t}
 // ===================== PANELS =====================
-function quickCard(){return`<div class="box"><h3>Radio quick card</h3><div style="font-size:14px;line-height:1.4">
+function quickCard(){return`<details class="box rcard"><summary style="cursor:pointer;font-weight:700;padding:6px 2px;font-size:15px">📻 Radio card <span class="small">(tap to open/close)</span></summary><div style="font-size:14px;line-height:1.4">
 <b>Call:</b> "&lt;who you're calling&gt;, &lt;who you are&gt;. &lt;message&gt;. Over." – call signs as digits: "nine zero zero, eight seven one".<br>
 <b>Despatch (900):</b> "Eight seven one, respond to Pit 1A, grid Sierra-Six, report of one rider, head injury. Over." → <b>Unit:</b> "Eight seven one copy, responding to Pit 1A."<br>
 <b>On scene:</b> "Nine zero zero, eight seven one on scene. One patient, conscious and breathing. Standby for sitrep. Over." → sitrep <b>within 1 minute</b> with a code.<br>
@@ -2561,7 +2562,7 @@ function quickCard(){return`<div class="box"><h3>Radio quick card</h3><div style
 <b>ETHANE:</b> Exact location · Type · Hazards · Access · Number + code · Emergency services.<br>
 <b>Codes:</b> ${Object.keys(CODES).map(k=>'<span style="color:'+(k=='Black'?'#ccc':CODECOL[k])+'">'+k+'</span>').join(' · ')}<br>
 <b>RSVP:</b> Rhythm · Speed (slower) · Volume · Pitch. <b>Prowords:</b> Over · Out · Copy · Wilco · Say again · Stand by · Go ahead · Sitrep · I spell · Correction · Affirmative/Negative.</div>
-<div class="note">Based on Colmed comms training material – check with Bob for current policy. EB 2025 call signs, confirm for 2026.</div></div>`}
+<div class="note">Based on Colmed comms training material – check with Bob for current policy. EB 2025 call signs, confirm for 2026.</div></details>`}
 
 function renderHdr(){const s=SNAP;if(!s)return;const info=MODE=='host'?(solo?'Solo demo':'Facilitator · room '+S.code):(s.me.role=='comms'?'You are 900 Comms Officer':s.me.role=='field'?'You are '+s.me.cs:'Lobby');$('hdrInfo').textContent=info+' · Round '+s.round+' · '+s.phase;
 $('timer').textContent=s.phase=='play'&&s.tEnd?(v=>Math.floor(v/60)+':'+String(v%60).padStart(2,'0'))(Math.max(0,Math.ceil((s.tEnd-s.now)/1000))):'';
@@ -2584,7 +2585,7 @@ return`<div class="box"><h3>Room ${solo?'(solo demo – nobody can join)':''}</h
 <div class="small">Units on map: ${Object.values(S.units).map(u=>'<b>'+esc(u.cs)+'</b> '+(u.bot?'(bot)':esc(u.player||''))).join(', ')||'none'}. Offline players keep their unit; reassign or add a bot.</div></div>`}
 function sendTab(){const units=Object.keys(S.units);const f=JF;const lp=f.x!=null?'map point '+gref(f.x,f.y):f.grid?('grid '+(normGrid(f.grid)||'?')):f.locName||'none';
 return`<div class="box"><h3>Send a job / message</h3>
-<div class="row"><select id="jfTo" style="flex:1"><option value="">To unit…</option>${units.map(c=>`<option${f.to==c?' selected':''}>${esc(c)}</option>`).join('')}<option value="all"${f.to=='all'?' selected':''}>Everyone (all responders)</option></select>
+<div class="row"><select id="jfTo" style="flex:1"><option value="">To unit…</option>${units.map(c=>`<option${f.to==c?' selected':''}>${esc(c)}</option>`).join('')}<option value="all"${f.to=='all'?' selected':''}>Everyone (all responders)</option><option value="900"${f.to=='900'?' selected':''}>900 Comms officer (message + private pin)</option></select>
 <select id="jfType">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${f.type==k?' selected':''}>${v[0]}</option>`).join('')}</select></div>
 <input id="jfTitle" placeholder="Title e.g. Patient 1" style="width:100%" value="${esc(f.title)}">
 <textarea id="jfDet" rows="4" style="width:100%;margin-top:4px" placeholder="Details: what the patient is, vitals, what to tell comms…">${esc(f.details)}</textarea>
@@ -2593,9 +2594,9 @@ return`<div class="box"><h3>Send a job / message</h3>
 <div class="row"><b class="small">Location:</b> <span class="small" style="color:#0ff">${esc(lp)}</span></div>
 <div class="row"><input id="jfGrid" placeholder="Grid e.g. 3E" style="width:96px" value="${esc(f.grid)}"><select id="jfLoc" style="flex:1;min-width:140px"><option value="">…or named location</option>${L.slice().sort((a,b)=>a.n.localeCompare(b.n)).map(l=>`<option value="${esc(l.n)}"${f.locName==l.n?' selected':''}>${l.g} ${esc(l.n)}</option>`).join('')}</select></div>
 <div class="row"><button class="${placeMode?'on':''}" onclick="placeMode=!placeMode;renderSide()">${placeMode?'Tap the map now…':'📍 Pick on map'}</button><button onclick="JF.x=JF.y=null;JF.grid='';JF.locName='';renderSide()">Clear location</button></div>
-<div class="row"><label><input type="radio" name="jfVis" value="public"${f.vis=='public'?' checked':''}> Show marker on everyone's map (not comms)</label></div>
+${f.type=='comms'||f.to=='900'?'<div class="note" style="color:#7fe3f0">Pin is shown ONLY on the comms officer\'s map (and yours). Responders never receive it.</div><div style="display:none">':'<div>'}<div class="row"><label><input type="radio" name="jfVis" value="public"${f.vis=='public'?' checked':''}> Show marker on everyone's map (not comms)</label></div>
 <div class="row"><label><input type="radio" name="jfVis" value="private"${f.vis=='private'?' checked':''}> Only tell this unit (private)</label></div>
-<div class="row"><label><input type="checkbox" id="jfMove"${f.move?' checked':''}> Order unit to move there now (auto-walk)</label></div>
+<div class="row"><label><input type="checkbox" id="jfMove"${f.move?' checked':''}> Order unit to move there now (auto-walk)</label></div></div>
 <button class="pri" style="width:100%" id="jfSend">Send</button></div>`}
 function jobsHtml(){if(!S.jobs.length)return'<div class="small">No jobs sent yet.</div>';return S.jobs.slice().reverse().map(j=>{const seen=Object.keys(j.seen||{});const st=j.resolved?'<span class="st-done">✔ resolved</span>':seen.length?'<span class="st-seen">👁 seen by '+esc(seen.join(','))+'</span>':'<span class="st-sent">✉ sent</span>';
 return`<div class="msg"><b>#${j.id} ${esc(j.title)}</b> → <b>${esc(j.to)}</b> <span class="small">${TYPES[j.type][0]} · ${hhmmss(j.t)}</span><br>${st} ${j.grid?'· 📍 '+j.grid+' '+esc(j.locName||'')+(j.markerOn?' (public marker)':j.vis=='private'?' (private)':''):''}${j.move?' · auto-move':''}
@@ -2621,16 +2622,25 @@ if(role=='field')h+=`<div class="box"><h3>You are ${esc(s.me.cs)}</h3><div class
 <div class="row"><input id="mvGrid" placeholder="Grid e.g. 3E" style="width:120px"><button onclick="const p=gridToXY($('mvGrid').value);if(p)send({t:'move',x:p[0],y:p[1]})">Walk to grid</button></div></div>
 <div class="box"><h3>Inbox</h3>${inboxHtml()}</div>`;
 if(role!='comms')h+=quickCard();h+=`<div class="box"><button onclick="location.reload()">Reconnect</button> <span class="small">Room ${esc(ME.code)} · ${esc(ME.name)}</span></div>`;return h}
-function commsPanel(){return`<div class="box"><h3>You are 900 – Comms Officer (EOC)</h3><div class="small">Your map is empty on purpose: you can't see units or patients. Build the picture from what units say on Zoom, and log every case below.</div></div>
-<div class="box"><h3>Case log</h3><div class="tblwrap"><table id="clog"><tr><th>Case no.</th>${LOGCOLS.map(c=>'<th>'+c+'</th>').join('')}</tr>${CLOG.rows.map((r,i)=>'<tr><td>'+(i+1)+'</td>'+r.map((v,k)=>`<td class="${TIMECOLS.includes(k)?'tm':''}"><input data-r="${i}" data-k="${k}" value="${esc(v)}">${TIMECOLS.includes(k)?`<button data-now="${i},${k}">Now</button>`:''}</td>`).join('')+'</tr>').join('')}</table></div>
-<button onclick="CLOG.rows.push(Array(6).fill(''));saveClog();renderSide()">+ Add row</button></div>
+function commsPanel(){return`<div class="box" style="padding:6px"><div class="small"><b>You are 900 – Comms Officer.</b> Your map shows no units or patients. Build the picture from Zoom and log every case.</div></div>
+<div class="box" id="msg900"></div>
+<details class="box" id="tblBox" ${localStorage.getItem('ebTbl')=='closed'?'':'open'}><summary style="cursor:pointer;font-weight:700;padding:4px 2px">📋 Case log <span class="small">(tap to open/close)</span></summary><div class="tblwrap"><table id="clog"><tr><th>Case no.</th>${LOGCOLS.map(c=>'<th>'+c+'</th>').join('')}</tr>${CLOG.rows.map((r,i)=>'<tr><td>'+(i+1)+'</td>'+r.map((v,k)=>`<td class="${TIMECOLS.includes(k)?'tm':''}"><input data-r="${i}" data-k="${k}" value="${esc(v)}">${TIMECOLS.includes(k)?`<button data-now="${i},${k}">Now</button>`:''}</td>`).join('')+'</tr>').join('')}</table></div>
+<button onclick="CLOG.rows.push(Array(6).fill(''));saveClog();renderSide()">+ Add row</button></details>
 <div class="box"><h3>Notes (fires, personal calls, etc.)</h3><textarea id="cNotes" rows="4" style="width:100%">${esc(CLOG.notes)}</textarea>
 <div class="row"><button class="${pinMode?'on':''}" onclick="pinMode=!pinMode;renderSide()">${pinMode?'Tap the map to drop pin…':'📌 Drop a pin on my map'}</button><button onclick="CLOG.pins=[];saveClog();renderSide()">Clear pins</button><span class="small">Label a pin with a call sign (e.g. 871) to be compared at Reveal.</span></div></div>`+quickCard()}
-function afterRender(){const g=id=>$(id);
+function centreOn(x0,y0){const r=$('mapbox').getBoundingClientRect();VIEW.s=Math.max(VIEW.s,.45);VIEW.ox=r.width/2-x0*VIEW.s;VIEW.oy=r.height/2-y0*VIEW.s;hoverG=gref(x0,y0)}
+function renderMsg900(){const el=$('msg900');if(!el)return;const js=Object.values(JOBS).filter(j=>j.to=='900').sort((a,b)=>b.id-a.id);
+if(!js.length){el.innerHTML='<h3>Messages from facilitator</h3><div class="small">None yet. Caller reports and private location pins will appear here.</div>';return}
+const one=(j,top)=>`<div class="m ${seenJobs.has(j.id)?'':'new'}">${seenJobs.has(j.id)?'':'<span class="badge">NEW</span> '}<b>${esc(j.title)}</b>${j.resolved?' <span class="small">· resolved</span>':''} <span class="small">${hhmm(j.t)}</span>${top&&j.details?'<div style="white-space:pre-wrap">'+esc(j.details)+'</div>':(!top&&j.details?' – <span class="small">'+esc(j.details.slice(0,80))+'</span>':'')}${top?(j.icon&&ICONS[j.icon]?ICONS[j.icon][1]:'')+(j.img?'<img src="'+j.img+'">':''):''}
+<div class="row">${j.x!=null?`<button onclick="centreOn(${Math.round(j.x)},${Math.round(j.y)})">📍 Show pin${j.grid?' ('+j.grid+')':''}</button>`:''}${seenJobs.has(j.id)?'':`<button class="pri" onclick="ackJob(${j.id});renderMsg900()">Got it</button>`}</div></div>`;
+el.innerHTML='<h3>Messages from facilitator</h3>'+one(js[0],true)+(js.length>1?'<details><summary class="small" style="cursor:pointer">Earlier messages ('+(js.length-1)+')</summary>'+js.slice(1).map(j=>one(j,false)).join('')+'</details>':'')+'<div class="note">Only you can see these pins. Describe the location to units over Zoom.</div>'}
+function applySplit(){const sp=JSON.parse(localStorage.getItem('ebSplit')||'{}');const root=document.documentElement.style;root.setProperty('--sideW',(sp.w||40)+'vw');root.setProperty('--mapH',(sp.h||55)+'vh');$('bSplit').style.display=document.body.classList.contains('comms')?'':'none';setTimeout(fit,30)}
+function setSplit(o){const sp=Object.assign(JSON.parse(localStorage.getItem('ebSplit')||'{}'),o);localStorage.setItem('ebSplit',JSON.stringify(sp));applySplit()}
+function afterRender(){const g=id=>$(id);renderMsg900();if(g('tblBox'))g('tblBox').ontoggle=()=>localStorage.setItem('ebTbl',g('tblBox').open?'open':'closed');
 if(g('qr')&&window.qrcode){try{const q=qrcode(0,'M');q.addData(location.href.split('#')[0]+'#room='+S.code);q.make();g('qr').innerHTML=q.createSvgTag(3,0)}catch(e){}}
 if(g('jfTo')){const b=()=>{JF.to=g('jfTo').value;JF.type=g('jfType').value;JF.title=g('jfTitle').value;JF.details=g('jfDet').value;JF.icon=g('jfIcon').value;JF.move=g('jfMove').checked;JF.vis=document.querySelector('input[name=jfVis]:checked').value};
 ['jfTo','jfType','jfTitle','jfDet','jfIcon','jfMove'].forEach(i=>{g(i).oninput=b;g(i).onchange=b});document.querySelectorAll('input[name=jfVis]').forEach(r=>r.onchange=b);
-g('jfType').onchange=()=>{b();JF.title=JF.type=='patient'?'Patient '+(S.jobs.filter(j=>j.type=='patient').length+1):'';renderSide()};g('jfGrid').onchange=()=>{JF.grid=g('jfGrid').value;JF.x=JF.y=null;JF.locName='';renderSide()};g('jfLoc').onchange=()=>{JF.locName=g('jfLoc').value;JF.x=JF.y=null;JF.grid='';renderSide()};
+g('jfTo').onchange=()=>{b();if(JF.to=='900'){JF.type='comms';JF.title='Caller report'}else if(JF.type=='comms'){JF.type='patient'}renderSide()};g('jfType').onchange=()=>{b();if(JF.type=='comms')JF.to='900';else if(JF.to=='900')JF.to='';JF.title=JF.type=='patient'?'Patient '+(S.jobs.filter(j=>j.type=='patient').length+1):JF.type=='comms'?'Caller report':'';renderSide()};g('jfGrid').onchange=()=>{JF.grid=g('jfGrid').value;JF.x=JF.y=null;JF.locName='';renderSide()};g('jfLoc').onchange=()=>{JF.locName=g('jfLoc').value;JF.x=JF.y=null;JF.grid='';renderSide()};
 g('jfFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);JF.img=c.toDataURL('image/jpeg',.7);renderSide()};im.src=r.result};r.readAsDataURL(f)};
 g('jfSend').onclick=()=>{b();sendJob()}}
 if(g('clogView'))renderClogView();
@@ -2649,5 +2659,7 @@ $('bFit').onclick=fit;$('bZin').onclick=()=>{const r=$('mapbox').getBoundingClie
 $('bJump').onclick=()=>{const p=gridToXY($('gridJump').value);if(!p)return;const r=$('mapbox').getBoundingClientRect();VIEW.s=Math.max(VIEW.s,.6);VIEW.ox=r.width/2-p[0]*VIEW.s;VIEW.oy=r.height/2-p[1]*VIEW.s;hoverG=gref(p[0],p[1])};
 $('bHelp').onclick=()=>{$('overlay').style.display='block';$('ovIn').innerHTML=`<h2>How to play</h2><ol><li>One person is <b>900, the Comms Officer</b>. Their map is <b>empty</b> – they can't see units, patients or incidents. They log every case in the table.</li><li>Everyone else is a <b>responder</b> with a call sign. You see the real map and move by tapping it.</li><li>The facilitator sends you <b>jobs</b> (a patient, a fire, "you're busting for the toilet"…). They pop up on your screen.</li><li><b>Tell 900 on Zoom</b>, using radio phrasing: who you're calling, who you are, exact location (grid + landmark), what you have. Tell 900 <b>before you move</b>.</li><li>Found a patient? Report to 900 first. <b>Don't respond unless 900 despatches you.</b></li><li>At the end the facilitator <b>reveals</b> what really happened next to 900's log.</li></ol>${quickCard()}<button class="pri" onclick="$('overlay').style.display='none'">Close</button>`};
 window.addEventListener('resize',()=>fit());
+$('bSplit').onclick=()=>{const sp=JSON.parse(localStorage.getItem('ebSplit')||'{}');if(innerWidth<820)setSplit({h:(sp.h||55)>=55?28:70});else setSplit({w:(sp.w||40)<=40?65:28})};
+(()=>{let dr=null;const d=$('drag');d.addEventListener('pointerdown',e=>{d.setPointerCapture(e.pointerId);dr=1});d.addEventListener('pointermove',e=>{if(!dr)return;if(innerWidth<820){const top=$('main').getBoundingClientRect().top;setSplit({h:Math.max(20,Math.min(80,Math.round((e.clientY-top)/innerHeight*100)))})}else setSplit({w:Math.max(20,Math.min(75,Math.round((innerWidth-e.clientX)/innerWidth*100)))})});d.addEventListener('pointerup',()=>dr=null)})();
 fit();renderSide();draw();
 </script></body></html>
